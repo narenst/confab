@@ -38,21 +38,22 @@ def parse_options():
     working directory.
     """
 
-    parser = OptionParser(usage="confab [options] command")
+    cmd_str = "{%s}" % "|".join(_tasks.keys())
+    parser = OptionParser(usage="confab [options] %s" % cmd_str)
 
     parser.add_option('-d', '--directory', dest='directory',
                       default=os.getcwd(),
                       help='directory from which to load configuration [default: %default]')
 
-    parser.add_option('-e', '--environment', dest='environment', 
+    parser.add_option('-e', '--environment', dest='environment',
                       default="local",
                       help='environment to operate on [default: %default]')
 
-    parser.add_option('-H', '--hosts', dest='hosts', 
+    parser.add_option('-H', '--hosts', dest='hosts',
                       default="",
                       help='comma-separated list of hosts to operate on')
 
-    parser.add_option('-R', '--roles', dest='roles', 
+    parser.add_option('-R', '--roles', dest='roles',
                       default="",
                       help='comma-separated list of roles to operate on')
 
@@ -64,10 +65,14 @@ def parse_options():
     return parser, opts, args
 
 
-def parse_task(name):
+def parse_task(name, parser):
     """
     Translate task name to task.
     """
+    # Identify task
+    if name not in _tasks:
+        parser.error('Invalid task "%s"' % name)
+
     return _tasks.get(name)
 
 
@@ -141,11 +146,7 @@ def main():
             parser.error('Exactly one task must be specified')
 
         task_name = arguments[0]
-        (task, needs_templates, needs_remotes) = parse_task(task_name)
-
-        # Identify task
-        if not task:
-            parser.error('Specified task must be one of: %s' % (', '.join(_tasks.keys())))
+        (task, needs_templates, needs_remotes) = parse_task(task_name, parser)
 
         # Construct task arguments
         kwargs = {'data_dir': os.path.join(options.directory, 'data')}
